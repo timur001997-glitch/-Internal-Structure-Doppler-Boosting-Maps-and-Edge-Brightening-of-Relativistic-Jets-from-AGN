@@ -3,42 +3,42 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import time
 
-start_time = time.time()  # время начала выполнения
+start_time = time.time()  # start time of calculations
 
-sigma_M = 100
-Gamma_in = 2 #гидродинамический лоренц-фактор на оси джета
-h_0 = 1*10**(1) #магнитное поле на расстоянии одного R_L от центральной машины в Гс
-c = 3*10**10 #скорость света в см/c
-G = 6.67*10**(-8) #гравитационная постоянная в системе СГС
-M = 1*10**5 * 2*10**33 #масса компактного объекта в г
-#M = 2*10**33 #масса Солнца в г
-r_g = 2*G*M/c**2 #гравитационный радиус в см
-R_L = 10*r_g #радиус светового цилиндра в см
+sigma_M = 100 #Michel magnetization parameter
+Gamma_in = 2 #hydrodynamic Lorentz factor on the jet axis
+h_0 = 1*10**(1) #magnetic field at the distance R_L from the central engine in G
+c = 3*10**10 #the speed of light in cm/s
+G = 6.67*10**(-8) #the gravitational constant in the CGS system
+M = 1*10**5 * 2*10**33 #the mass of the compact object in g
+#M = 2*10**33 #the mass of the Sun in g
+r_g = 2*G*M/c**2 #gravitational radius in cm
+R_L = 10*r_g #the radius of the light cylinder in cm
 R_L = 10**(9)
-m_e = 9.1*10**(-28) #масса электрона в г
-q = 4.8 * 10**(-10) #заряд электрона в системе СГС
-t_0 = R_L/c #обезразмеривание времени
+m_e = 9.1*10**(-28) #the mass of an electron in g
+q = 4.8 * 10**(-10) #the electron charge in the CGS system
+t_0 = R_L/c #dimensionless time
 
-P_0 = 4.5 * 10**(-10) #давление в дин/см^2 для M87
-z_00 = 220 * 3.086 * 10**18 #характерное расстояние вдоль оси джета в см для M87
-z_00 = z_00/10**16 #характерное безразмерное расстояние вдоль оси джета для M87
-Psi_0 = np.pi #полный магнитный поток!
-r_jet_cr = np.sqrt(Gamma_in*sigma_M) #в световых цилиндрах R_L (безразмерная)
-r_core = 1 #в световых цилиндрах R_L (безразмерная)
+P_0 = 4.5 * 10**(-10) #pressure in dyn/cm^2 for M87
+z_00 = 220 * 3.086 * 10**18 #the characteristic distance along the jet axis in cm for M87
+z_00 = z_00/10**16 #the characteristic dimensionless distance along the jet axis in cm for M87
+Psi_0 = np.pi #full magnetic flux!
+r_jet_cr = np.sqrt(Gamma_in*sigma_M) #in light cylinders R_L (dimensionless)
+r_core = 1 #in light cylinders R_L (dimensionless)
 
-delta = 10**(-2) #анти-поломка программы - малая добавка delta
+delta = 10**(-2) #anti-breakage program - small delta supplement
 
 Omega_0 = 1
 
 print(r_jet_cr)
 
-#Направление луча зрения в лабораторной СО
-Theta = np.pi*17/180 #угол между осью z вращения джета и лучом зрения
+#The direction of the line of sight in the laboratory reference frame
+Theta = np.pi*17/180 #the angle between the z axis of the jet rotation and the line of sight
 n_x = np.sin(Theta)
 n_y = 0
 n_z = np.cos(Theta)
 
-#Формулы для ЭМ полей через магнитный поток
+#Formulas for EM fields through magnetic flux
 def norm(x,y,z):
     r = np.sqrt(x**2 + y**2 + z**2)
     return r
@@ -47,7 +47,7 @@ def r_jet(z):
     r_jet = (Psi_0**2*h_0**2/(8*np.pi**3*P_0*z_00**2))**(1/4) * z**(2/4)
 #    Theta_jet = 0.2
 #    r_jet = Theta_jet * z
-    return 1.*r_jet #форма джета в единицах R_L (безразмерная)
+    return 1.*r_jet #the shape of the jet in R_L units (dimensionless)
 
 def k(z):
     k = 4.5*sigma_M*(r_jet(z)/(6*sigma_M))**(0.65) * (1 + (r_jet(z)/(6*sigma_M))**2)**(0.15)
@@ -81,7 +81,7 @@ def Omega(x,y,z):
     Omega = Omega_0 * np.sqrt(1 - Psi(x, y, z)/Psi_0)
     return Omega
 
-#Максимальный лоренц-фактор
+#The maximum Lorentz factor
 def Gamma_max(x,y,z):
     Gamma_max = Gamma_in + 2*sigma_M*Psi(x, y, z)/Psi_0 * (1 - Psi(x, y, z)/Psi_0)
     return Gamma_max
@@ -139,7 +139,7 @@ def B_p_z(x,y,z):
 def B_z(x,y,z):
     return B_p_z(x,y,z)
 
-#Формулы для компонент безразмерной гидродинамической (дрейфовой) скорости
+#Formulas for the components of the dimensionless hydrodynamic (drift) velocity
 def V_x(x,y,z):
     B = norm(B_x(x, y, z),B_y(x, y, z),B_z(x, y, z))
     V_x = (E_y(x, y, z)*B_z(x, y, z) - E_z(x, y, z)*B_y(x, y, z))/B**2
@@ -155,25 +155,25 @@ def V_z(x,y,z):
     V_z = (E_x(x, y, z)*B_y(x, y, z) - E_y(x, y, z)*B_x(x, y, z))/B**2
     return V_z
 
-#Гидродинамический лоренц-фактор
+#Hydrodynamic Lorentz factor
 def Gamma(x,y,z):
     V = norm(V_x(x, y, z),V_y(x, y, z),V_z(x, y, z))
     Gamma = 1/np.sqrt(1 - V**2)
     Gamma = np.sqrt(Gamma_in**2 - 1 + Gamma**2)
     return Gamma
 
-#Доплер-фактор
+#The Doppler factor
 def D(x,y,z): 
     D = 1/Gamma(x, y, z)/(1 - V_x(x, y, z)*n_x - V_y(x, y, z)*n_y - V_z(x, y, z)*n_z)
     return D
 
-#Локальная замагниченность
+#The local magnetization
 def sigma(x,y,z):
     rho = norm(x,y,0)
     sigma = (1 - rho**2/r_jet(z)**2) * rho**2/r_jet(z)**2 * sigma_M/Gamma(x, y, z)
     return sigma
 
-#Граница замагниченности
+#The boundary of magnetization
 def x_mag(z):
     x_mag = r_jet(z)/np.sqrt(2) * np.sqrt(1 + np.sqrt(1 - 2*r_jet(z)**2/sigma_M**2 + 2*np.sqrt(r_jet(z)**4/sigma_M**4 + 4*Gamma_in**2/sigma_M**2)))
     return x_mag
@@ -186,16 +186,13 @@ def x_mag_3(z):
     x_mag = r_jet(z)/np.sqrt(2) * np.sqrt(1 - np.sqrt(1 - 2*r_jet(z)**2/sigma_M**2 - 2*np.sqrt(r_jet(z)**4/sigma_M**4 + 4*Gamma_in**2/sigma_M**2)))
     return x_mag
 
-#Аппроксимация внутренней конической границы
+#Approximation of the inner conic boundary
 def x_approx(z):
     x_approx = sigma_M**(-1) * r_jet(z)**2
     return x_approx
 
-#Заготовка для построения альфвеновской и быстрой магнитозвуковой поверхностей
+#Blank for the construction of Alfven and fast magnetosonic surfaces
 def rounded_plateau_function(x, x_start, x_end, height, radius):
-    """
-    Функция, возвращающая значение y для прямоугольного плато с закруглёнными углами.
-    """
     width = x_end - x_start
     radius = min(radius, width / 2)
     
@@ -205,14 +202,11 @@ def rounded_plateau_function(x, x_start, x_end, height, radius):
         if xi < x_start or xi > x_end:
             y[i] = 0
         elif xi < x_start + radius:
-            # Левый закруглённый угол (четверть окружности)
             dx = xi - (x_start + radius)
             y[i] = height - radius + np.sqrt(max(0, radius**2 - dx**2))
         elif xi <= x_end - radius:
-            # Плато
             y[i] = height
         else:
-            # Правый закруглённый угол (четверть окружности)
             dx = xi - (x_end - radius)
             y[i] = height - radius + np.sqrt(max(0, radius**2 - dx**2))
     
@@ -228,7 +222,7 @@ z_max = z_min + 7300
 z_0 = 100
 x_0 = 0
 y_0 = 0
-#Построим равномерную квадратную сетку NxN, внутри которой лежит джет
+#Construction of the uniform square grid NxN, inside which lies the jet
 N = 10000
 Z = np.linspace(z_min, z_max,N)
 X_mag_data_1 = []
@@ -256,10 +250,10 @@ for i in range(N):
         if np.abs(r_jet(z_0) - np.sqrt(sigma_M)) < delta:
             z_sqrt_sigma_M = z_0
 
-#Быстрая магнитозвуковая поверхность
+#Fast magnetosonic surface
 x_fm = Gamma_in**(-1/2) * sigma_M**(1/2)
 z_fm = sigma_M/Gamma_in 
-#Параметры для быстрой магнитозвуковой поверхности
+#Parameters for the fast magnetosonic surface
 x_start, x_end = -x_fm, x_fm
 height = z_fm
 x_for_fm = np.linspace(x_start, x_end, N)
@@ -269,22 +263,22 @@ print(z_sigma_M)
 print(z_sqrt_sigma_M)
 print(z_fm)
 
-#Альфвеновская поверхность
+#The Alfven surface
 x_a = 1 
 z_a = z_fm
-#Параметры для альфвеновской поверхности
+#Parameters for the Alfven surface
 x_start, x_end = -x_a, x_a
 height = z_a
 x_for_a = np.linspace(x_start, x_end, N)
 z_for_a = Pseudo_Surface(x_for_a, x_start, x_end, height)
 
-#Схематичный рисунок границ сильно- слабозамагниченных течений
+#Schematic figure of the boundaries of strongly-weakly magnetized flows
 plt.figure(figsize=(6, 9))
-#Добавляем быструю магнитозвуковую поверхность
+#Adding the fast magnetosonic surface
 plt.plot(x_for_fm, z_for_fm, color='black', linewidth=3)
-#Добавляем альфвеновскую поверхность
+#Adding the Alfven surface
 plt.plot(x_for_a, z_for_a, color='black', linewidth=3)
-# Добавляем вертикальную линию в точке x=0
+# Adding the vertical line at the point x=0
 plt.axvline(x=0, color='black', linestyle='--', linewidth=2)
 plt.plot(r_jet(Z),Z,color = 'black', linewidth = 2, linestyle = '--')
 plt.plot(-r_jet(Z),Z,color = 'black', linewidth = 2, linestyle = '--')
@@ -301,7 +295,7 @@ plt.plot(X_mag_data_3,Z_23,color = 'black', linewidth = 2, linestyle = '-')
 plt.plot(-X_mag_data_1,Z_1,color = 'black', linewidth = 2, linestyle = '-')
 plt.plot(-X_mag_data_2,Z_23,color = 'black', linewidth = 2, linestyle = '-')  
 plt.plot(-X_mag_data_3,Z_23,color = 'black', linewidth = 2, linestyle = '-')
-# Добавление простого текста
+#Adding text
 if z_max >= 7000:
     plt.text(25, 6950, '$\sigma_{M}$', fontsize=22, color='black')
     plt.text(-90, 200, 'a)', fontsize=26, color='black')
@@ -313,8 +307,8 @@ else:
 plt.xlabel('$x$', fontsize=15)
 plt.ylabel('$z/R_{L}$', fontsize=15)
 ax = plt.gca()
-#ax.xaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
-ax.yaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
+#ax.xaxis.set_major_locator(MaxNLocator(5))  # maximum of 5 divisions
+ax.yaxis.set_major_locator(MaxNLocator(5))  # maximum of 5 divisions
 plt.ylim(0,z_max)
 if (z_max >= 7000):
     plt.xlim(-sigma_M,sigma_M)
@@ -323,7 +317,7 @@ plt.tick_params(axis='both', which='major', labelsize=14)
 plt.grid(True)
 plt.show()
 
-end_time = time.time()  # время окончания выполнения
-execution_time = end_time - start_time  # вычисляем время выполнения
+end_time = time.time()  # the end time of the calculation
+execution_time = end_time - start_time  # calculating the program runtime
  
-print(f"Время выполнения программы: {execution_time} секунд")
+print(f"Program execution time: {execution_time} seconds")
