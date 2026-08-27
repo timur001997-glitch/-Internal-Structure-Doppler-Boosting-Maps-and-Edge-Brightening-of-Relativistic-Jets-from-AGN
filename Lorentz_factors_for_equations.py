@@ -197,6 +197,6 @@ plt.legend(fontsize=14)
 plt.show()
 
 end_time = time.time()  # the end time of the calculation
-execution_time = end_time - start_time  # calculating the program runtime.
+execution_time = end_time - start_time  # calculating the program runtime
 
 print(f"Program execution time: {execution_time} seconds")
