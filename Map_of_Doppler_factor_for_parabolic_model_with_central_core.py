@@ -298,7 +298,7 @@ plt.show()
 
 #The magnetization map
 plt.figure(figsize=(8, 4.5))
-im = plt.imshow(S_data,origin='lower',cmap='plasma',extent=[z_min, z_max, y_min, y_max],aspect="auto")
+im = plt.imshow(S_data,origin='lower',cmap='jet',extent=[z_min, z_max, y_min, y_max],aspect="auto")
 #Adding text
 if z_max >= 300000:
     plt.text(-62500, -1375, 'a)', fontsize=26, color='black')
