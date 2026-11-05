@@ -5,42 +5,43 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.ticker import MaxNLocator
 from numba import jit
 
-start_time = time.time()  # start time of calculations
+start_time = time.time()  # время начала выполнения
 
-sigma_M = 100 #Michel magnetization parameter
-Gamma_in = 2 #hydrodynamic Lorentz factor on the jet axis
-h_0 = 1*10**(1) #magnetic field at the distance R_L from the central engine in G
-c = 3*10**10 #the speed of light in cm/s
-G = 6.67*10**(-8) #the gravitational constant in the CGS system
-M = 1*10**5 * 2*10**33 #the mass of the compact object in g
-#M = 2*10**33 #the mass of the Sun in g
-r_g = 2*G*M/c**2 #gravitational radius in cm
-R_L = 10*r_g #the radius of the light cylinder in cm
+sigma_M = 70
+Gamma_in = 5.0 #гидродинамический лоренц-фактор на оси джета
+h_0 = 1*10**(0) #магнитное поле на расстоянии одного R_L от центральной машины в Гс
+c = 3*10**10 #скорость света в см/c
+G = 6.67*10**(-8) #гравитационная постоянная в системе СГС
+M = 1*10**5 * 2*10**33 #масса компактного объекта в г
+#M = 2*10**33 #масса Солнца в г
+r_g = 2*G*M/c**2 #гравитационный радиус в см
+R_L = 10*r_g #радиус светового цилиндра в см
 R_L = 10**(9)
-m_e = 9.1*10**(-28) #the mass of an electron in g
-q = 4.8 * 10**(-10) #the electron charge in the CGS system
-t_0 = R_L/c #dimensionless time
+m_e = 9.1*10**(-28) #масса электрона в г
+q = 4.8 * 10**(-10) #заряд электрона в системе СГС
+t_0 = R_L/c #обезразмеривание времени
 
-P_0 = 4.5 * 10**(-10) #pressure in dyn/cm^2 for M87
-z_00 = 220 * 3.086 * 10**18 #the characteristic distance along the jet axis in cm for M87
-z_00 = z_00/10**16 #the characteristic dimensionless distance along the jet axis in cm for M87
-Psi_0 = np.pi #full magnetic flux!
-r_jet_cr = np.sqrt(Gamma_in*sigma_M) #in light cylinders R_L (dimensionless)
-r_core = 5 #in light cylinders R_L (dimensionless)
+P_0 = 4.5 * 10**(-10) #давление в дин/см^2 для M87
+z_00 = 220 * 3.086 * 10**18 #характерное расстояние вдоль оси джета в см для M87
+z_00 = z_00/10**16 #характерное безразмерное расстояние вдоль оси джета для M87
+Psi_0 = np.pi #полный магнитный поток!
+r_jet_cr = np.sqrt(Gamma_in*sigma_M) #в световых цилиндрах R_L (безразмерная)
+r_core = 5 #в световых цилиндрах R_L (безразмерная)
 
-delta = 10**(-4) #anti-breakage program - small delta supplement
+delta = 10**(-4) #анти-поломка программы - малая добавка delta
 
 Omega_0 = 1
 
 print(r_jet_cr)
 
-#The direction of the line of sight in the laboratory reference frame
-Theta = np.pi*17/180 #the angle between the z axis of the jet rotation and the line of sight
+#Направление луча зрения в лабораторной СО
+Theta = np.pi*17/180 #угол между осью z вращения джета и лучом зрения
+Theta_deg = int(round(np.degrees(Theta)))  #угол между осью z вращения джета и лучом зрения в градусах
 n_x = np.sin(Theta)
 n_y = 0
 n_z = np.cos(Theta)
 
-#Formulas for EM fields through magnetic flux
+#Формулы для ЭМ полей через магнитный поток
 @jit(nopython=True)
 def norm(x,y,z):
     r = np.sqrt(x**2 + y**2 + z**2)
@@ -51,7 +52,7 @@ def r_jet(z):
     r_jet = (Psi_0**2*h_0**2/(8*np.pi**3*P_0*z_00**2))**(1/4) * z**(2/4)
 #    Theta_jet = 0.2
 #    r_jet = Theta_jet * z
-    return r_jet #the shape of the jet in R_L units (dimensionless)
+    return r_jet #форма джета в единицах R_L (безразмерная)
 
 @jit(nopython=True)
 def k(z):
@@ -84,15 +85,17 @@ def Psi(x,y,z):
 
 @jit(nopython=True)
 def Partial_Derivative(func, x,y,z, var_index, h=delta):  
-    if var_index == 0:
+    # Вычисляем значения со смещением
+    if var_index == 0:  # производная по x
         f_plus = func(x + h, y, z)
         f_minus = func(x - h, y, z)
-    elif var_index == 1:
+    elif var_index == 1:  # производная по y
         f_plus = func(x, y + h, z)
         f_minus = func(x, y - h, z)
-    else:
+    else:  # производная по z
         f_plus = func(x, y, z + h)
         f_minus = func(x, y, z - h)  
+    # Центральная разность (наиболее точная)
     return (f_plus - f_minus) / (2 * h)
 
 @jit(nopython=True)
@@ -100,7 +103,7 @@ def Omega(x,y,z):
     Omega = Omega_0 * np.sqrt(1 - Psi(x, y, z)/Psi_0)
     return Omega
 
-#The maximum Lorentz factor
+#Максимальный лоренц-фактор
 @jit(nopython=True)
 def Gamma_max(x,y,z):
     Gamma_max = Gamma_in + 2*sigma_M*Psi(x, y, z)/Psi_0 * (1 - Psi(x, y, z)/Psi_0)
@@ -170,7 +173,7 @@ def B_p_z(x,y,z):
 def B_z(x,y,z):
     return B_p_z(x,y,z)
 
-#Formulas for the components of the dimensionless hydrodynamic (drift) velocity
+#Формулы для компонент безразмерной гидродинамической (дрейфовой) скорости
 @jit(nopython=True)
 def V_x(x,y,z):
     B = norm(B_x(x, y, z),B_y(x, y, z),B_z(x, y, z))
@@ -189,7 +192,7 @@ def V_z(x,y,z):
     V_z = (E_x(x, y, z)*B_y(x, y, z) - E_y(x, y, z)*B_x(x, y, z))/B**2
     return V_z
 
-#Hydrodynamic Lorentz factor
+#Гидродинамический лоренц-фактор
 @jit(nopython=True)
 def Gamma(x,y,z):
     V = norm(V_x(x, y, z),V_y(x, y, z),V_z(x, y, z))
@@ -197,27 +200,63 @@ def Gamma(x,y,z):
     Gamma = np.sqrt(Gamma_in**2 - 1 + Gamma**2)
     return Gamma
 
-#The Doppler factor
+#Доплер-фактор
 @jit(nopython=True)
 def D(x,y,z): 
     D = 1/Gamma(x, y, z)/(1 - V_x(x, y, z)*n_x - V_y(x, y, z)*n_y - V_z(x, y, z)*n_z)
     return D
 
-#The local magnetization
+#Локальная замагниченность
 @jit(nopython=True)
 def sigma(x,y,z):
     rho = norm(x,y,0)
     sigma = (1 - rho**2/r_jet(z)**2) * rho**2/r_jet(z)**2 * sigma_M/Gamma(x, y, z)
     return sigma
 
+#Поток Пойнтинга
+@jit(nopython=True)
+def S(x,y,z):
+    V = norm(V_x(x, y, z),V_y(x, y, z),V_z(x, y, z))
+    B = norm(B_x(x, y, z),B_y(x, y, z),B_z(x, y, z))
+    S = B**2/(4*np.pi) * V
+    return S
+
+# --- НОВОЕ: ищем на плоскости yz точки, где локальная замагниченность sigma(0,y,z)=1 ---
+@jit(nopython=True)
+def find_sigma_1(z, y_max, n_scan=100):
+    #грубый скан по y с последующей бисекцией для уточнения каждого корня
+    roots = np.zeros(4)  #на практике внутри джета максимум 2 корня (u и 1-u)
+    n_roots = 0
+    y_prev = delta  #стартуем чуть вдали от оси, чтобы не делить на ноль
+    f_prev = sigma(0, y_prev, z) - 1
+    for kk in range(1, n_scan+1):
+        y_curr = y_max * kk / n_scan
+        f_curr = sigma(0, y_curr, z) - 1
+        if f_prev * f_curr < 0 and n_roots < 4:
+            #бисекция для уточнения корня
+            a = y_prev; b = y_curr; fa = f_prev
+            for _ in range(50):
+                m = 0.5*(a+b)
+                fm = sigma(0, m, z) - 1
+                if fa * fm < 0:
+                    b = m
+                else:
+                    a = m; fa = fm
+            roots[n_roots] = 0.5*(a+b)
+            n_roots += 1
+        y_prev = y_curr
+        f_prev = f_curr
+    return roots, n_roots
+# --- КОНЕЦ НОВОГО ---
+
 z_min = 1
 print(r_jet(z_min))
-z_max = z_min + 3000
+z_max = z_min + 30000
 z_0 = 100
 x_0 = 0
 y_0 = 0
-#Construction of the uniform square grid NxN, inside which lies the jet
-N = 100
+#Построим равномерную квадратную сетку NxN, внутри которой лежит джет
+N = 1000
 Z = np.linspace(z_min, z_max,N)
 Y = np.linspace(-r_jet(z_max), r_jet(z_max),N)
 D_data = []
@@ -248,97 +287,150 @@ G_data = np.transpose(G_data)
 Y = np.flip(Y)
 #T_data = np.flip(T_data)
 
+# --- НОВОЕ: геометрическое место точек sigma=1 (внутренняя и внешняя ветви) ---
+z_sig1_in = [];  y_sig1_in = []
+z_sig1_out = []; y_sig1_out = []
+for i in range(N):
+    z_0 = Z[i]
+    roots, n_roots = find_sigma_1(z_0, r_jet(z_0))
+    if n_roots >= 2:
+        z_sig1_in.append(z_0);  y_sig1_in.append(roots[0])
+        z_sig1_out.append(z_0); y_sig1_out.append(roots[1])
+    elif n_roots == 1:
+        #точка касания - замыкаем петлю
+        z_sig1_in.append(z_0);  y_sig1_in.append(roots[0])
+        z_sig1_out.append(z_0); y_sig1_out.append(roots[0])
+z_sig1_in = np.array(z_sig1_in);   y_sig1_in = np.array(y_sig1_in)
+z_sig1_out = np.array(z_sig1_out); y_sig1_out = np.array(y_sig1_out)
+# --- КОНЕЦ НОВОГО ---
+
 z_min, z_max = min(Z), max(Z)
 y_min, y_max = min(Y), max(Y)
 D_min, D_max = D_data.min(),D_data.max()
 S_min, S_max = S_data.min(),S_data.max()
 G_min, G_max = G_data.min(),G_data.max()
 
-#Building the color scale for the Doppler factor
+#Построим цветовую шкалу для Доплер-фактора
+# Возвращаю предыдущий вариант с апельсиновым оттенком
 colors = [
-    (0.15, 0.25, 0.45),
-    (0.25, 0.4, 0.6),
-    (0.65, 0.45, 0.3),
-    (0.85, 0.55, 0.25),
-    (0.95, 0.7, 0.3),
-    (1.0, 0.92, 0.65)
+    (0.15, 0.25, 0.45),   # Умеренный синий
+    (0.25, 0.4, 0.6),     # Переходный стальной
+    (0.65, 0.45, 0.3),    # Бронза с оранжевым оттенком
+    (0.85, 0.55, 0.25),   # Яркая апельсиновая медь
+    (0.95, 0.7, 0.3),     # Золото с мандариновым оттенком
+    # ТОЛЬКО ПИК СДЕЛАЛ СВЕТЛЕЕ:
+    (1.0, 0.92, 0.65)     # Светлый апельсиново-желтый (осветленный пик)
 ]
 
+# Контрольные точки (доли те же)
 color_positions = [0, 0.15, 0.3, 0.5, 0.8, 1.0]
 
+# Создаем финальную цветовую карту
 final_cmap = LinearSegmentedColormap.from_list(
     'blue_to_orange_gold_light_peak', 
     list(zip(color_positions, colors)), 
     N=256
 )
 
-#The Doppler factor map
+#Карта Допплер-фактора
 plt.figure(figsize=(8, 4.5))
 im = plt.imshow(D_data,origin='lower',cmap=final_cmap,extent=[z_min, z_max, y_min, y_max],aspect="auto")
-#Adding text
-if z_max >= 300000:
-    plt.text(-62500, -1375, 'c)', fontsize=26, color='black')
+# Добавление простого текста
+if z_max >= 30000:
+    plt.text(-2500, -80, 'c)', fontsize=26, color='black')
 elif z_max >= 3000:
-    plt.text(-200, -80, 'c)', fontsize=26, color='black')
+    plt.text(-200, -18, 'c)', fontsize=26, color='black')
 #    plt.text(-2750, -290, 'c)', fontsize=26, color='black')
 #    plt.text(-2000, -255, 'c)', fontsize=26, color='black')
 else:
     plt.text(-20, -26, 'd)', fontsize=26, color='black')
-#Adding the color scale (colorbar)
+# Добавляем цветовую шкалу (colorbar)
 cbar = plt.colorbar(im)
 cbar.ax.set_title('$D$', fontsize=15)
 cbar.ax.tick_params(which='major',labelsize=14)
 plt.xlabel('$z/R_{L}$', fontsize=15)
 plt.ylabel('$y/R_{L}$', fontsize=15)
 ax = plt.gca()
-ax.xaxis.set_major_locator(MaxNLocator(5))  # maximum of 5 divisions
-plt.title('$\sigma_{M}=100, \Gamma_{in}=2, z_{st}/R_{L}=1, \\Theta = {17}^{\circ}$',fontsize=15)
+ax.xaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
+# Меняем подписи на кастомные значения
+#plt.title('$\sigma_{M}=100, \Gamma_{in}=2, z_{st}/R_{L}=1, \\Theta = {17}^{\circ}$',fontsize=15)
+plt.title(f'$\\sigma_{{M}}={sigma_M}, \\Gamma_{{in}}={Gamma_in:g}, z_{{st}}/R_{{L}}={z_min:g}, \\Theta = {Theta_deg}^{{\\circ}}$', fontsize=15)
 plt.tick_params(axis='both', which='major', labelsize=14)
 plt.show()
 
-#The magnetization map
+#Карта замагниченности
 plt.figure(figsize=(8, 4.5))
 im = plt.imshow(S_data,origin='lower',cmap='jet',extent=[z_min, z_max, y_min, y_max],aspect="auto")
-#Adding text
-if z_max >= 300000:
-    plt.text(-62500, -1375, 'a)', fontsize=26, color='black')
+# --- НОВОЕ: чёрная сплошная линия - геометрическое место точек sigma=1 ---
+plt.plot(z_sig1_in,   y_sig1_in,  'k-', lw=2)
+plt.plot(z_sig1_out,  y_sig1_out, 'k-', lw=2)
+plt.plot(z_sig1_in,  -y_sig1_in,  'k-', lw=2)
+plt.plot(z_sig1_out, -y_sig1_out, 'k-', lw=2)
+# --- КОНЕЦ НОВОГО ---
+# Добавление простого текста
+if z_max >= 30000:
+    plt.text(-2500, -80, 'a)', fontsize=26, color='black')
 elif z_max >= 3000:
-    plt.text(-200, -80, 'a)', fontsize=26, color='black')
+    plt.text(-200, -18, 'a)', fontsize=26, color='black')
 #   plt.text(-2750, -290, 'a)', fontsize=26, color='black')
-#Adding the color scale (colorbar)
+# Добавляем цветовую шкалу (colorbar)
 cbar = plt.colorbar(im)
 cbar.ax.set_title('$\sigma$', fontsize=15)
 cbar.ax.tick_params(which='major',labelsize=14)
 plt.xlabel('$z/R_{L}$', fontsize=15)
 plt.ylabel('$y/R_{L}$', fontsize=15)
 ax = plt.gca()
-ax.xaxis.set_major_locator(MaxNLocator(5))  # maximum of 5 divisions
-plt.title('$\sigma_{M}=100,\Gamma_{in}=2, z_{st}/R_{L}=1$',fontsize=15)
+ax.xaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
+#plt.title('$\sigma_{M}=100,\Gamma_{in}=2, z_{st}/R_{L}=1$',fontsize=15)
+plt.title(f'$\\sigma_{{M}}={sigma_M}, \\Gamma_{{in}}={Gamma_in:g}, z_{{st}}/R_{{L}}={z_min:g}$', fontsize=15)
 plt.tick_params(axis='both', which='major', labelsize=14)
 plt.show()
 
-#The Lorentz factor map
+#Карта Лоренц-фактора
 plt.figure(figsize=(8, 4.5))
 im = plt.imshow(G_data,origin='lower',cmap='viridis',extent=[z_min, z_max, y_min, y_max],aspect="auto")
-#Adding text
-if z_max >= 300000:
-    plt.text(-62500, -1375, 'b)', fontsize=26, color='black')
+# Добавление простого текста
+if z_max >= 30000:
+    plt.text(-2500, -80, 'b)', fontsize=26, color='black')
 elif z_max >= 3000:
-    plt.text(-200, -80, 'b)', fontsize=26, color='black')
+    plt.text(-200, -18, 'b)', fontsize=26, color='black')
 #    plt.text(-2750, -290, 'b)', fontsize=26, color='black')
-#Adding the color scale (colorbar)
+# Добавляем цветовую шкалу (colorbar)
 cbar = plt.colorbar(im)
 cbar.ax.set_title('$\Gamma$', fontsize=15)
 cbar.ax.tick_params(which='major',labelsize=14)
 plt.xlabel('$z/R_{L}$', fontsize=15)
 plt.ylabel('$y/R_{L}$', fontsize=15)
 ax = plt.gca()
-ax.xaxis.set_major_locator(MaxNLocator(5))  # maximum of 5 divisions
-plt.title('$\sigma_{M}=100,\Gamma_{in}=2, z_{st}/R_{L}=1$',fontsize=15)
+ax.xaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
+#plt.title('$\sigma_{M}=100,\Gamma_{in}=2, z_{st}/R_{L}=1$',fontsize=15)
+plt.title(f'$\\sigma_{{M}}={sigma_M}, \\Gamma_{{in}}={Gamma_in:g}, z_{{st}}/R_{{L}}={z_min:g}$', fontsize=15)
 plt.tick_params(axis='both', which='major', labelsize=14)
 plt.show()
 
-end_time = time.time()  # the end time of the calculation
-execution_time = end_time - start_time  # calculating the program runtime
+#Карта Потока Пойнтинга
+plt.figure(figsize=(8, 4.5))
+im = plt.imshow(S_data,origin='lower',cmap='plasma',extent=[z_min, z_max, y_min, y_max],aspect="auto")
+# Добавление простого текста
+if z_max >= 30000:
+    plt.text(-2500, -80, 'd)', fontsize=26, color='black')
+elif z_max >= 3000:
+    plt.text(-200, -18, 'd)', fontsize=26, color='black')
+#    plt.text(-2750, -290, 'b)', fontsize=26, color='black')
+# Добавляем цветовую шкалу (colorbar)
+cbar = plt.colorbar(im)
+cbar.ax.set_title(r'$\tilde{S}$', fontsize=15)
+cbar.ax.tick_params(which='major',labelsize=14)
+plt.xlabel('$z/R_{L}$', fontsize=15)
+plt.ylabel('$y/R_{L}$', fontsize=15)
+ax = plt.gca()
+ax.xaxis.set_major_locator(MaxNLocator(5))  # максимум 5 делений
+#plt.title('$\sigma_{M}=100,\Gamma_{in}=2, z_{st}/R_{L}=1$',fontsize=15)
+plt.title(f'$\\sigma_{{M}}={sigma_M}, \\Gamma_{{in}}={Gamma_in:g}, z_{{st}}/R_{{L}}={z_min:g}$', fontsize=15)
+plt.tick_params(axis='both', which='major', labelsize=14)
+plt.show()
+
+end_time = time.time()  # время окончания выполнения
+execution_time = end_time - start_time  # вычисляем время выполнения
  
-print(f"Program execution time: {execution_time} seconds")
+print(f"Время выполнения программы: {execution_time} секунд")
