@@ -26,4 +26,4 @@ The following calculations are presented here:
 
 This work was supported by Russian Science Foundation grant 26-12-00190.
 
-If these numerical calculations are useful for your research, please cite it: https://doi.org/10.5281/zenodo.23974669
+If these numerical calculations are useful for your research, please cite it: https://doi.org/10.5281/zenodo.23974669, or directly through this repository on GitHub.
